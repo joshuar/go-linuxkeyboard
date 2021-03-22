@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/joshuar/go-linuxkeyboard/pkg/InputEvent"
 	log "github.com/sirupsen/logrus"
@@ -30,6 +30,11 @@ type LinuxKeyboard struct {
 
 // Read will read an event from the keyboard.
 func (kb *LinuxKeyboard) Read(buf []byte) (n int, err error) {
+	if binary.Size(buf) != 24 {
+		err := errors.New("Read buffer is not 24 bytes")
+		log.Error(err)
+		return n, err
+	}
 	n, err = kb.reader.Read(buf)
 	if err != nil {
 		log.Error(err)
@@ -101,18 +106,18 @@ func (kb *LinuxKeyboard) TypeKey(key string) {
 	kb.KeySyncEvent()
 }
 
-// TypeString is a convienience function to "type" (press+release) a key on the keyboard
-func (kb *LinuxKeyboard) TypeString(str string) {
-	s := strings.NewReader(str)
-	for {
-		c, _, _ := s.ReadRune()
-		log.Infof("Typing %v", string(c))
-		kb.KeyPressEvent(string(c))
-		kb.KeySyncEvent()
-		kb.KeyReleaseEvent(string(c))
-		kb.KeySyncEvent()
-	}
-}
+// // TypeString is a convienience function to "type" (press+release) a key on the keyboard
+// func (kb *LinuxKeyboard) TypeString(str string) {
+// 	s := strings.NewReader(str)
+// 	for {
+// 		c, _, _ := s.ReadRune()
+// 		log.Infof("Typing %v", string(c))
+// 		kb.KeyPressEvent(string(c))
+// 		kb.KeySyncEvent()
+// 		kb.KeyReleaseEvent(string(c))
+// 		kb.KeySyncEvent()
+// 	}
+// }
 
 // StartSnooping sets up a channel that can be used to recieve key events
 func (kb *LinuxKeyboard) StartSnooping() chan InputEvent.InputEvent {
