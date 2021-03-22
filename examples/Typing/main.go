@@ -15,16 +15,27 @@ func main() {
 
 	time.Sleep(5 * time.Second)
 	log.Info("Typing hello")
+
+	// type out a complete string
+	kbd.TypeString("HELLO")
+	kbd.TypeKey("SPACE")
+
+	// type out letter by letter
 	word := []string{"H", "E", "L", "L", "O"}
 	for _, w := range word {
 		kbd.TypeKey(w)
 	}
 
-	time.Sleep(1 * time.Second)
-	log.Info("Erasing a few characters")
-	for i := 0; i <= 2; i++ {
+	time.Sleep(5 * time.Second)
+
+	// erase the last word
+	log.Info("Erasing characters")
+	for i := 0; i < len("hello"); i++ {
 		kbd.TypeKey("BS")
 	}
+
+	// type something else
+	kbd.TypeString(" THERE!")
 
 	kbd.Close()
 }
