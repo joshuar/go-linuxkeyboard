@@ -10,79 +10,70 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	deviceDirectory = "/dev/input/by-path/*event-kbd"
-)
+const deviceDirectory = "/dev/input/by-path/*event-kbd"
 
-var (
-	ev = make(chan KeyboardEvent)
-)
+var ev = make(chan KeyboardEvent)
+
+type CharVariants struct {
+	lc rune
+	uc rune
+}
 
 type KeyModifiers struct {
 	CapsLock bool
 	Alt      bool
 	Ctrl     bool
 	Shift    bool
+	Meta     bool
 }
 
-type KeyInfo struct {
-	Modifiers *KeyModifiers
-	AsString  string
-	AsRune    rune
+func (km *KeyModifiers) ToggleAlt() {
+	km.Alt = !km.Alt
 }
 
-func NewKeyInfo(e *InputEvent.InputEvent) *KeyInfo {
-	k := &KeyInfo{}
-	switch {
-	case e.IsKeyPress() && e.KeyToString() == "CAPS_LOCK":
-		k.Modifiers.CapsLock = true
-	case e.IsKeyRelease() && e.KeyToString() == "CAPS_LOCK":
-		k.Modifiers.CapsLock = false
-	case e.IsKeyPress() && e.KeyToString() == "L_SHIFT":
-		k.Modifiers.Shift = true
-	case e.IsKeyRelease() && e.KeyToString() == "L_SHIFT":
-		k.Modifiers.Shift = false
-	case e.IsKeyPress() && e.KeyToString() == "R_SHIFT":
-		k.Modifiers.Shift = true
-	case e.IsKeyRelease() && e.KeyToString() == "R_SHIFT":
-		k.Modifiers.Shift = false
-	case e.IsKeyPress() && e.KeyToString() == "L_CTRL":
-		k.Modifiers.Ctrl = true
-	case e.IsKeyRelease() && e.KeyToString() == "L_CTRL":
-		k.Modifiers.Ctrl = false
-	case e.IsKeyPress() && e.KeyToString() == "R_CTRL":
-		k.Modifiers.Ctrl = true
-	case e.IsKeyRelease() && e.KeyToString() == "R_CTRL":
-		k.Modifiers.Ctrl = false
-	case e.IsKeyPress() && e.KeyToString() == "L_ALT":
-		k.Modifiers.Alt = true
-	case e.IsKeyRelease() && e.KeyToString() == "L_ALT":
-		k.Modifiers.Alt = false
-	case e.IsKeyPress() && e.KeyToString() == "R_ALT":
-		k.Modifiers.Alt = true
-	case e.IsKeyRelease() && e.KeyToString() == "R_ALT":
-		k.Modifiers.Alt = false
+func (km *KeyModifiers) ToggleShift() {
+	km.Shift = !km.Shift
+}
+
+func (km *KeyModifiers) ToggleCtrl() {
+	km.Ctrl = !km.Ctrl
+}
+
+func (km *KeyModifiers) ToggleMeta() {
+	km.Meta = !km.Meta
+}
+
+func (km *KeyModifiers) ToggleCapsLock() {
+	km.CapsLock = !km.CapsLock
+}
+
+func NewKeyModifers() *KeyModifiers {
+	return &KeyModifiers{
+		CapsLock: false,
+		Alt:      false,
+		Ctrl:     false,
+		Shift:    false,
+		Meta:     false,
 	}
-	k.AsString = e.KeyToString()
-	return k
 }
 
 type KeyboardEvent struct {
-	Key  *InputEvent.InputEvent
-	Info *KeyInfo
+	Key      *InputEvent.InputEvent
+	AsString string
+	AsRune   rune
 }
 
 func NewKeyboardEvent() *KeyboardEvent {
 	return &KeyboardEvent{
-		Key:  InputEvent.NewInputEvent(),
-		Info: &KeyInfo{},
+		Key: InputEvent.NewInputEvent(),
 	}
 }
 
 // LinuxKeyboard represents a keyboard device, with the character special file and a reader and writer for manipulating it.
 type LinuxKeyboard struct {
-	file  *os.File
-	Event *KeyboardEvent
+	file      *os.File
+	Event     *KeyboardEvent
+	Modifiers *KeyModifiers
 }
 
 // Read will read an event from the keyboard.
@@ -97,7 +88,25 @@ func (kb *LinuxKeyboard) Read(buf []byte) (n int, err error) {
 		log.Error(err)
 		return 0, err
 	}
-	kb.Event.Info = NewKeyInfo(kb.Event.Key)
+	kb.Event.AsString = kb.Event.Key.KeyToString()
+	switch {
+	case (kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease()) && kb.Event.AsString == "CAPS_LOCK":
+		kb.Modifiers.ToggleCapsLock()
+	case (kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease()) && (kb.Event.AsString == "L_SHIFT" || kb.Event.AsString == "R_SHIFT"):
+		kb.Modifiers.ToggleShift()
+	case (kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease()) && (kb.Event.AsString == "L_CTRL" || kb.Event.AsString == "R_CTRL"):
+		kb.Modifiers.ToggleCtrl()
+	case (kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease()) && (kb.Event.AsString == "L_ALT" || kb.Event.AsString == "R_ALT"):
+		kb.Modifiers.ToggleAlt()
+	case (kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease()) && (kb.Event.AsString == "L_META" || kb.Event.AsString == "R_META"):
+		kb.Modifiers.ToggleMeta()
+	}
+	switch {
+	case kb.Modifiers.Shift:
+		kb.Event.AsRune = runeMap[kb.Event.Key.Code].uc
+	default:
+		kb.Event.AsRune = runeMap[kb.Event.Key.Code].lc
+	}
 	return 24, nil
 }
 
@@ -196,8 +205,9 @@ func NewLinuxKeyboard(device string) *LinuxKeyboard {
 		log.Fatalf("Could not open keyboard device: %v", err)
 	}
 	return &LinuxKeyboard{
-		file:  file,
-		Event: NewKeyboardEvent(),
+		file:      file,
+		Event:     NewKeyboardEvent(),
+		Modifiers: NewKeyModifers(),
 	}
 }
 
