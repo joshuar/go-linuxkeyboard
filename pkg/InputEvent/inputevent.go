@@ -209,7 +209,7 @@ func (i *InputEvent) IsKeyPress() bool {
 
 // IsKeyRelease is true when the event was a key being released.
 func (i *InputEvent) IsKeyRelease() bool {
-	return i.Value == EvRelease
+	return i.Value == EvRelease && i.Code != 0
 }
 
 // New InputEvent creates a new, empty InputEvent.

@@ -49,3 +49,15 @@ var runeMap = map[uint16]CharVariants{
 	52: {lc: '.', uc: '>'},
 	53: {lc: '/', uc: '?'},
 }
+
+func CodeAndCase(r rune) (uint16, bool) {
+	for k, v := range runeMap {
+		switch {
+		case r == v.lc:
+			return k, false
+		case r == v.uc:
+			return k, true
+		}
+	}
+	return 0, false
+}

@@ -3,8 +3,11 @@ package LinuxKeyboard
 import (
 	"encoding/binary"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"unicode"
 
 	"github.com/joshuar/go-linuxkeyboard/pkg/InputEvent"
 	log "github.com/sirupsen/logrus"
@@ -127,20 +130,30 @@ func (kb *LinuxKeyboard) Close() {
 }
 
 // KeyPressEvent encapsulates and sends a key press event to the keyboard
-func (kb *LinuxKeyboard) KeyPressEvent(key string) error {
+func (kb *LinuxKeyboard) KeyPressEvent(key interface{}) error {
 	i := InputEvent.NewInputEvent()
 	i.Type = InputEvent.EvKey
 	i.Value = InputEvent.EvPress
-	i.Code = InputEvent.KeyCodeOf(key)
+	switch c := key.(type) {
+	case uint16:
+		i.Code = c
+	case string:
+		i.Code = InputEvent.KeyCodeOf(c)
+	}
 	return kb.Write(i)
 }
 
 // KeyReleaseEvent encapsulates and sends a key release event to the keyboard
-func (kb *LinuxKeyboard) KeyReleaseEvent(key string) error {
+func (kb *LinuxKeyboard) KeyReleaseEvent(key interface{}) error {
 	i := InputEvent.NewInputEvent()
 	i.Type = InputEvent.EvKey
 	i.Value = InputEvent.EvRelease
-	i.Code = InputEvent.KeyCodeOf(key)
+	switch c := key.(type) {
+	case uint16:
+		i.Code = c
+	case string:
+		i.Code = InputEvent.KeyCodeOf(c)
+	}
 	return kb.Write(i)
 }
 
@@ -154,22 +167,60 @@ func (kb *LinuxKeyboard) KeySyncEvent() error {
 }
 
 // TypeKey is a convienience function to "type" (press+release) a key on the keyboard
-func (kb *LinuxKeyboard) TypeKey(key string) {
-	kb.KeyPressEvent(key)
+func (kb *LinuxKeyboard) TypeKey(key rune) error {
+	if !unicode.In(key, unicode.PrintRanges...) {
+		err := errors.New("rune is not a printable character")
+		log.Error(err)
+		return err
+	}
+	keyCode, isUpperCase := CodeAndCase(key)
+	if isUpperCase {
+		kb.KeyPressEvent("L_SHIFT")
+		kb.KeySyncEvent()
+		kb.KeyPressEvent(keyCode)
+		kb.KeySyncEvent()
+		kb.KeyReleaseEvent(keyCode)
+		kb.KeySyncEvent()
+		kb.KeyReleaseEvent("L_SHIFT")
+		kb.KeySyncEvent()
+		return nil
+	} else {
+		kb.KeyPressEvent(keyCode)
+		kb.KeySyncEvent()
+		kb.KeyReleaseEvent(keyCode)
+		kb.KeySyncEvent()
+		return nil
+	}
+}
+
+func (kb *LinuxKeyboard) TypeSpace() {
+	kb.KeyPressEvent("SPACE")
 	kb.KeySyncEvent()
-	kb.KeyReleaseEvent(key)
+	kb.KeyReleaseEvent("SPACE")
 	kb.KeySyncEvent()
 }
 
-// // TypeString is a convienience function to "type" (press+release) a key on the keyboard
-func (kb *LinuxKeyboard) TypeString(str string) {
-	for i := 0; i < len(str); i++ {
-		c := string(str[i])
-		kb.KeyPressEvent(c)
-		kb.KeySyncEvent()
-		kb.KeyReleaseEvent(c)
-		kb.KeySyncEvent()
+func (kb *LinuxKeyboard) TypeBackSpace() {
+	kb.KeyPressEvent("BS")
+	kb.KeySyncEvent()
+	kb.KeyReleaseEvent("BS")
+	kb.KeySyncEvent()
+}
+
+// TypeString is a convienience function to "type" (press+release) a key on the keyboard
+func (kb *LinuxKeyboard) TypeString(str string) error {
+	s := strings.NewReader(str)
+	for {
+		r, _, err := s.ReadRune() // returns rune, nbytes, error
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		kb.TypeKey(r)
 	}
+	return nil
 }
 
 // StartSnooping sets up a channel that can be used to recieve key events
