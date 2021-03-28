@@ -1,5 +1,11 @@
 package LinuxKeyboard
 
+type CharVariants struct {
+	lc rune
+	uc rune
+	cc rune
+}
+
 var runeMap = map[uint16]CharVariants{
 	2:  {lc: '1', uc: '!'},
 	3:  {lc: '2', uc: '@'},
@@ -13,6 +19,8 @@ var runeMap = map[uint16]CharVariants{
 	11: {lc: '0', uc: ')'},
 	12: {lc: '-', uc: '_'},
 	13: {lc: '=', uc: '+'},
+	14: {lc: '\b', uc: '\b'},
+	15: {lc: '\t', uc: '\t'},
 	16: {lc: 'q', uc: 'Q'},
 	17: {lc: 'w', uc: 'W'},
 	18: {lc: 'e', uc: 'E'},
@@ -25,6 +33,7 @@ var runeMap = map[uint16]CharVariants{
 	25: {lc: 'p', uc: 'P'},
 	26: {lc: '[', uc: '{'},
 	27: {lc: ']', uc: '}'},
+	28: {lc: '\n', uc: '\n'},
 	30: {lc: 'a', uc: 'A'},
 	31: {lc: 's', uc: 'S'},
 	32: {lc: 'd', uc: 'D'},
@@ -48,6 +57,7 @@ var runeMap = map[uint16]CharVariants{
 	51: {lc: ',', uc: '<'},
 	52: {lc: '.', uc: '>'},
 	53: {lc: '/', uc: '?'},
+	57: {lc: ' ', uc: ' '},
 }
 
 func CodeAndCase(r rune) (uint16, bool) {

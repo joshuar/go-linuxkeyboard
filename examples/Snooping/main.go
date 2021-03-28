@@ -11,11 +11,11 @@ func main() {
 	for e := range events {
 		switch {
 		case e.Key.IsKeyPress():
-			log.Infof("Pressed key -- value: %v code: %v type: %v string: %v rune: %v", e.Key.Value, e.Key.Code, e.Key.Type, e.AsString, string(e.AsRune))
+			log.Infof("Pressed key -- value: %d code: %d type: %d string: %s rune: %d (%c)", e.Key.Value, e.Key.Code, e.Key.Type, e.AsString, e.AsRune, e.AsRune)
 		case e.Key.IsKeyRelease():
-			log.Infof("Released key -- value: %v code: %v type: %v", e.Key.Value, e.Key.Code, e.Key.Type)
+			log.Infof("Released key -- value: %d code: %d type: %d", e.Key.Value, e.Key.Code, e.Key.Type)
 		default:
-			log.Infof("Other event -- value: %v code: %v type: %v", e.Key.Value, e.Key.Code, e.Key.Type)
+			log.Infof("Other event -- value: %d code: %d type: %d", e.Key.Value, e.Key.Code, e.Key.Type)
 		}
 	}
 }

@@ -17,11 +17,6 @@ const deviceDirectory = "/dev/input/by-path/*event-kbd"
 
 var ev = make(chan KeyboardEvent)
 
-type CharVariants struct {
-	lc rune
-	uc rune
-}
-
 type KeyModifiers struct {
 	CapsLock bool
 	Alt      bool
@@ -60,12 +55,14 @@ func NewKeyModifers() *KeyModifiers {
 	}
 }
 
+// KeyBoardEvent represents a raw keypress and it's string/rune representations
 type KeyboardEvent struct {
 	Key      *InputEvent.InputEvent
 	AsString string
 	AsRune   rune
 }
 
+// NewKeyBoardEvent creates a KeyBoardEvent
 func NewKeyboardEvent() *KeyboardEvent {
 	return &KeyboardEvent{
 		Key: InputEvent.NewInputEvent(),
@@ -107,6 +104,8 @@ func (kb *LinuxKeyboard) Read(buf []byte) (n int, err error) {
 	switch {
 	case kb.Modifiers.Shift:
 		kb.Event.AsRune = runeMap[kb.Event.Key.Code].uc
+	case kb.Modifiers.Ctrl:
+		kb.Event.AsRune = runeMap[kb.Event.Key.Code].cc
 	default:
 		kb.Event.AsRune = runeMap[kb.Event.Key.Code].lc
 	}
