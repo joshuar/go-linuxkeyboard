@@ -90,7 +90,7 @@ func (kb *LinuxKeyboard) Read(buf []byte) (n int, err error) {
 		log.Error(err)
 		return 0, err
 	}
-	if kb.Event.Key.Code != uint16(InputEvent.EvMsc) {
+	if kb.Event.Key.Type != InputEvent.EvMsc {
 		if kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease() {
 			kb.Event.AsString = kb.Event.Key.KeyToString()
 			switch {
