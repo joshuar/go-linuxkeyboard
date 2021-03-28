@@ -83,31 +83,36 @@ func (kb *LinuxKeyboard) Read(buf []byte) (n int, err error) {
 		log.Error(err)
 		return 0, err
 	}
+	kb.Event = NewKeyboardEvent()
 	err = binary.Read(kb.file, binary.LittleEndian, kb.Event.Key)
 	if err != nil {
 		log.Error(err)
 		return 0, err
 	}
-	kb.Event.AsString = kb.Event.Key.KeyToString()
-	switch {
-	case (kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease()) && kb.Event.AsString == "CAPS_LOCK":
-		kb.Modifiers.ToggleCapsLock()
-	case (kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease()) && (kb.Event.AsString == "L_SHIFT" || kb.Event.AsString == "R_SHIFT"):
-		kb.Modifiers.ToggleShift()
-	case (kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease()) && (kb.Event.AsString == "L_CTRL" || kb.Event.AsString == "R_CTRL"):
-		kb.Modifiers.ToggleCtrl()
-	case (kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease()) && (kb.Event.AsString == "L_ALT" || kb.Event.AsString == "R_ALT"):
-		kb.Modifiers.ToggleAlt()
-	case (kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease()) && (kb.Event.AsString == "L_META" || kb.Event.AsString == "R_META"):
-		kb.Modifiers.ToggleMeta()
-	}
-	switch {
-	case kb.Modifiers.Shift:
-		kb.Event.AsRune = runeMap[kb.Event.Key.Code].uc
-	case kb.Modifiers.Ctrl:
-		kb.Event.AsRune = runeMap[kb.Event.Key.Code].cc
-	default:
-		kb.Event.AsRune = runeMap[kb.Event.Key.Code].lc
+	if kb.Event.Key.Code != uint16(InputEvent.EvMsc) {
+		if kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease() {
+			kb.Event.AsString = kb.Event.Key.KeyToString()
+			switch {
+			case kb.Event.AsString == "CAPS_LOCK":
+				kb.Modifiers.ToggleCapsLock()
+			case kb.Event.AsString == "L_SHIFT" || kb.Event.AsString == "R_SHIFT":
+				kb.Modifiers.ToggleShift()
+			case kb.Event.AsString == "L_CTRL" || kb.Event.AsString == "R_CTRL":
+				kb.Modifiers.ToggleCtrl()
+			case kb.Event.AsString == "L_ALT" || kb.Event.AsString == "R_ALT":
+				kb.Modifiers.ToggleAlt()
+			case kb.Event.AsString == "L_META" || kb.Event.AsString == "R_META":
+				kb.Modifiers.ToggleMeta()
+			}
+			switch {
+			case kb.Modifiers.Shift:
+				kb.Event.AsRune = runeMap[kb.Event.Key.Code].uc
+			case kb.Modifiers.Ctrl:
+				kb.Event.AsRune = runeMap[kb.Event.Key.Code].cc
+			default:
+				kb.Event.AsRune = runeMap[kb.Event.Key.Code].lc
+			}
+		}
 	}
 	return 24, nil
 }

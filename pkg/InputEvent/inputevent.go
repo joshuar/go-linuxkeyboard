@@ -204,7 +204,7 @@ func (i *InputEvent) KeyToString() string {
 
 // IsKeyPress is true when the event was a key being depressed.
 func (i *InputEvent) IsKeyPress() bool {
-	return i.Value == EvPress
+	return i.Value == EvPress && i.Type != EvMsc
 }
 
 // IsKeyRelease is true when the event was a key being released.
