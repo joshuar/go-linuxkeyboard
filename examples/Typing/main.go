@@ -29,6 +29,6 @@ func main() {
 	time.Sleep(1 * time.Second)
 
 	log.Info("Typing There!...")
-	kbd.TypeString("There!")
+	kbd.TypeString("There !")
 
 }

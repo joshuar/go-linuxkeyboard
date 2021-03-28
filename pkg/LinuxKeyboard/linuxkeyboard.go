@@ -3,6 +3,7 @@ package LinuxKeyboard
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -173,7 +174,7 @@ func (kb *LinuxKeyboard) KeySyncEvent() error {
 // TypeKey is a convienience function to "type" (press+release) a key on the keyboard
 func (kb *LinuxKeyboard) TypeKey(key rune) error {
 	if !unicode.In(key, unicode.PrintRanges...) {
-		err := errors.New("rune is not a printable character")
+		err := fmt.Errorf("rune %c (%U) is not a printable character", key, key)
 		log.Error(err)
 		return err
 	}
@@ -222,7 +223,12 @@ func (kb *LinuxKeyboard) TypeString(str string) error {
 		if err != nil {
 			return err
 		}
-		kb.TypeKey(r)
+		switch r {
+		case ' ':
+			kb.TypeSpace()
+		default:
+			kb.TypeKey(r)
+		}
 	}
 	return nil
 }
