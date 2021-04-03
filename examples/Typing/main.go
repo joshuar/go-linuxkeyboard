@@ -15,7 +15,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	log.Info("Typing 'Hello' letter by letter...")
+	log.Info("Typing 'Hello ' letter by letter...")
 	kbd.TypeKey('H')
 	kbd.TypeKey('e')
 	kbd.TypeKey('l')
@@ -25,7 +25,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	log.Info("Erasing Hello...")
+	log.Info("Erasing 'Hello '...")
 	for i := 0; i <= 5; i++ {
 		kbd.TypeBackSpace()
 	}
