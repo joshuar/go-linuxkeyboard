@@ -1,6 +1,7 @@
 package LinuxKeyboard
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -119,13 +120,23 @@ func (kb *LinuxKeyboard) Read(buf []byte) (n int, err error) {
 }
 
 // Write will write an event to the keyboard.
-func (kb *LinuxKeyboard) Write(i *InputEvent.InputEvent) error {
-	err := binary.Write(kb.file, binary.LittleEndian, i)
-	if err != nil {
-		log.Error(err)
-		return err
+func (kb *LinuxKeyboard) Write(buf []byte) error {
+	r := bytes.NewReader(buf)
+	for {
+		e := make([]byte, 24)
+		if _, err := io.ReadFull(r, e); err != nil {
+			if err == io.EOF {
+				return nil
+			} else {
+				log.Error(err)
+				return err
+			}
+		}
+		if err := binary.Write(kb.file, binary.LittleEndian, e); err != nil {
+			log.Error(err)
+			return err
+		}
 	}
-	return nil
 }
 
 // Close will close the character special file for the keyboard.
@@ -136,39 +147,45 @@ func (kb *LinuxKeyboard) Close() {
 
 // KeyPressEvent encapsulates and sends a key press event to the keyboard
 func (kb *LinuxKeyboard) KeyPressEvent(key interface{}) error {
-	i := InputEvent.NewInputEvent()
-	i.Type = InputEvent.EvKey
-	i.Value = InputEvent.EvPress
+	event := InputEvent.NewInputEvent()
+	event.Type = InputEvent.EvKey
+	event.Value = InputEvent.EvPress
 	switch c := key.(type) {
 	case uint16:
-		i.Code = c
+		event.Code = c
 	case string:
-		i.Code = InputEvent.KeyCodeOf(c)
+		event.Code = InputEvent.KeyCodeOf(c)
 	}
-	return kb.Write(i)
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, event)
+	return kb.Write(buf.Bytes())
 }
 
 // KeyReleaseEvent encapsulates and sends a key release event to the keyboard
 func (kb *LinuxKeyboard) KeyReleaseEvent(key interface{}) error {
-	i := InputEvent.NewInputEvent()
-	i.Type = InputEvent.EvKey
-	i.Value = InputEvent.EvRelease
+	event := InputEvent.NewInputEvent()
+	event.Type = InputEvent.EvKey
+	event.Value = InputEvent.EvRelease
 	switch c := key.(type) {
 	case uint16:
-		i.Code = c
+		event.Code = c
 	case string:
-		i.Code = InputEvent.KeyCodeOf(c)
+		event.Code = InputEvent.KeyCodeOf(c)
 	}
-	return kb.Write(i)
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, event)
+	return kb.Write(buf.Bytes())
 }
 
 // KeySyncEvent encapsulates and sends a sync event to the keyboard
 func (kb *LinuxKeyboard) KeySyncEvent() error {
-	i := InputEvent.NewInputEvent()
-	i.Type = InputEvent.EvSyn
-	i.Value = 0
-	i.Code = 0
-	return kb.Write(i)
+	event := InputEvent.NewInputEvent()
+	event.Type = InputEvent.EvSyn
+	event.Value = 0
+	event.Code = 0
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, event)
+	return kb.Write(buf.Bytes())
 }
 
 // TypeKey is a convienience function to "type" (press+release) a key on the keyboard

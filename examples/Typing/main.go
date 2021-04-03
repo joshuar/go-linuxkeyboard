@@ -13,22 +13,26 @@ func main() {
 
 	kbd := LinuxKeyboard.NewLinuxKeyboard(LinuxKeyboard.FindKeyboardDevice())
 
-	log.Info("Typing Hello letter by letter...")
+	time.Sleep(1 * time.Second)
+
+	log.Info("Typing 'Hello' letter by letter...")
 	kbd.TypeKey('H')
 	kbd.TypeKey('e')
 	kbd.TypeKey('l')
 	kbd.TypeKey('l')
 	kbd.TypeKey('o')
 	kbd.TypeSpace()
+
 	time.Sleep(1 * time.Second)
 
 	log.Info("Erasing Hello...")
 	for i := 0; i <= 5; i++ {
 		kbd.TypeBackSpace()
 	}
+
 	time.Sleep(1 * time.Second)
 
-	log.Info("Typing There!...")
+	log.Info("Typing 'There !'")
 	kbd.TypeString("There !")
 
 }
