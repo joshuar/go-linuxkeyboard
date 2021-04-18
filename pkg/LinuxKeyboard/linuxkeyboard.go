@@ -27,26 +27,33 @@ type KeyModifiers struct {
 	Meta     bool
 }
 
+// ToggleAlt keeps track of whether an Alt key has been pressed
 func (km *KeyModifiers) ToggleAlt() {
 	km.Alt = !km.Alt
 }
 
+// ToggleShift keeps track of whether an Shift key has been pressed
 func (km *KeyModifiers) ToggleShift() {
 	km.Shift = !km.Shift
 }
 
+// ToggleCtrl keeps track of whether an Ctrl key has been pressed
 func (km *KeyModifiers) ToggleCtrl() {
 	km.Ctrl = !km.Ctrl
 }
 
+// ToggleMeta keeps track of whether an Meta key has been pressed
 func (km *KeyModifiers) ToggleMeta() {
 	km.Meta = !km.Meta
 }
 
+// ToggleCapsLock keeps track of whether the Caps Lock key has been pressed
 func (km *KeyModifiers) ToggleCapsLock() {
 	km.CapsLock = !km.CapsLock
 }
 
+// NewKeyModifiers sets up a struct for tracking whether any of the modifier
+// keys have been pressed
 func NewKeyModifers() *KeyModifiers {
 	return &KeyModifiers{
 		CapsLock: false,
@@ -78,7 +85,9 @@ type LinuxKeyboard struct {
 	Modifiers *KeyModifiers
 }
 
-// Read will read an event from the keyboard.
+// Read will read an event from the keyboard
+// The function should always read 24 bytes, the size of the keyboard event data sent by the kernel
+// The function will handle tracking modifier keys that are pressed
 func (kb *LinuxKeyboard) Read(buf []byte) (n int, err error) {
 	if binary.Size(buf) != 24 {
 		err := errors.New("Read buffer is not 24 bytes")
@@ -120,6 +129,8 @@ func (kb *LinuxKeyboard) Read(buf []byte) (n int, err error) {
 }
 
 // Write will write an event to the keyboard.
+// The function will write to the keyboard device in chunks of 24 bytes
+// which is the event size required by the kernel
 func (kb *LinuxKeyboard) Write(buf []byte) error {
 	r := bytes.NewReader(buf)
 	for {
@@ -215,6 +226,7 @@ func (kb *LinuxKeyboard) TypeKey(key rune) error {
 	}
 }
 
+// TypeSpace is a convienience function to "type" (press+release) the space bar
 func (kb *LinuxKeyboard) TypeSpace() {
 	kb.KeyPressEvent("SPACE")
 	kb.KeySyncEvent()
@@ -222,6 +234,8 @@ func (kb *LinuxKeyboard) TypeSpace() {
 	kb.KeySyncEvent()
 }
 
+// TypeSpace is a convienience function to "type" (press+release) the backspace key.
+// It will effectively erase the last character that was typed
 func (kb *LinuxKeyboard) TypeBackSpace() {
 	kb.KeyPressEvent("BS")
 	kb.KeySyncEvent()
@@ -229,7 +243,8 @@ func (kb *LinuxKeyboard) TypeBackSpace() {
 	kb.KeySyncEvent()
 }
 
-// TypeString is a convienience function to "type" (press+release) a key on the keyboard
+// TypeString is a convienience function to "type" out an entire string.
+// It uses a combination of the TypeKey and TypeSpace functions to do this.
 func (kb *LinuxKeyboard) TypeString(str string) error {
 	s := strings.NewReader(str)
 	for {

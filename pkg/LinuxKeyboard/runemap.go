@@ -60,6 +60,8 @@ var runeMap = map[uint16]CharVariants{
 	57: {lc: ' ', uc: ' '},
 }
 
+// CodeAndCase returns the keycode and whether the key was
+// an upper or lowercase rune for the typed key
 func CodeAndCase(r rune) (uint16, bool) {
 	for k, v := range runeMap {
 		switch {
