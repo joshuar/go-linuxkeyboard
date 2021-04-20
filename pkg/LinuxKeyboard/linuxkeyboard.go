@@ -17,8 +17,6 @@ import (
 
 const deviceDirectory = "/dev/input/by-path/*event-kbd"
 
-var ev = make(chan KeyboardEvent)
-
 type KeyModifiers struct {
 	CapsLock bool
 	Alt      bool
@@ -275,7 +273,12 @@ func (kb *LinuxKeyboard) Snoop(ev chan KeyboardEvent) {
 		}
 
 		if e > 0 {
-			ev <- *kb.Event
+			select {
+			case <-ev:
+				return
+			default:
+				ev <- *kb.Event
+			}
 		}
 	}
 }
