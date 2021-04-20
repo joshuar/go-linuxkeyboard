@@ -153,7 +153,6 @@ func (kb *LinuxKeyboard) Write(buf []byte) error {
 // Close will close the character special file for the keyboard.
 func (kb *LinuxKeyboard) Close() {
 	kb.file.Close()
-	kb.StopSnooping()
 }
 
 // KeyPressEvent encapsulates and sends a key press event to the keyboard
@@ -265,29 +264,20 @@ func (kb *LinuxKeyboard) TypeString(str string) error {
 	return nil
 }
 
-// StartSnooping sets up a channel that can be used to recieve key events
-func (kb *LinuxKeyboard) StartSnooping() chan KeyboardEvent {
-	ev = make(chan KeyboardEvent)
-	go func(kb *LinuxKeyboard, ev chan KeyboardEvent) {
-		for {
-			buffer := make([]byte, 24)
-			e, err := kb.Read(buffer)
-			if err != nil {
-				log.Error(err)
-				break
-			}
-
-			if e > 0 {
-				ev <- *kb.Event
-			}
+// Snoop listens for key events and passes them through a channel
+func (kb *LinuxKeyboard) Snoop(ev chan KeyboardEvent) {
+	for {
+		buffer := make([]byte, 24)
+		e, err := kb.Read(buffer)
+		if err != nil {
+			log.Error(err)
+			break
 		}
-	}(kb, ev)
-	return ev
-}
 
-// StopSnooping closes the channel for snooping key events
-func (kb *LinuxKeyboard) StopSnooping() {
-	close(ev)
+		if e > 0 {
+			ev <- *kb.Event
+		}
+	}
 }
 
 // NewLinuxKeyboard opens a character special device from the kernel representing a keyboard and
