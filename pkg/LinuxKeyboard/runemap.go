@@ -3,7 +3,7 @@ package LinuxKeyboard
 type CharVariants struct {
 	lc rune
 	uc rune
-	cc rune
+	// cc rune
 }
 
 var runeMap = map[uint16]CharVariants{

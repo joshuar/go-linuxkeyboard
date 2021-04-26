@@ -100,24 +100,27 @@ func (kb *LinuxKeyboard) Read(buf []byte) (n int, err error) {
 	}
 	if kb.Event.Key.Type != InputEvent.EvMsc {
 		if kb.Event.Key.IsKeyPress() || kb.Event.Key.IsKeyRelease() {
-			kb.Event.AsString = kb.Event.Key.KeyToString()
-			switch {
-			case kb.Event.AsString == "CAPS_LOCK":
+			switch kb.Event.Key.KeyToString() {
+			case "CAPS_LOCK":
 				kb.Modifiers.ToggleCapsLock()
-			case kb.Event.AsString == "L_SHIFT" || kb.Event.AsString == "R_SHIFT":
+			case "L_SHIFT":
+			case "R_SHIFT":
 				kb.Modifiers.ToggleShift()
-			case kb.Event.AsString == "L_CTRL" || kb.Event.AsString == "R_CTRL":
+			case "L_CTRL":
+			case "R_CTRL":
 				kb.Modifiers.ToggleCtrl()
-			case kb.Event.AsString == "L_ALT" || kb.Event.AsString == "R_ALT":
+			case "L_ALT":
+			case "R_ALT":
 				kb.Modifiers.ToggleAlt()
-			case kb.Event.AsString == "L_META" || kb.Event.AsString == "R_META":
+			case "L_META":
+			case "R_META":
 				kb.Modifiers.ToggleMeta()
 			}
 			switch {
 			case kb.Modifiers.Shift:
 				kb.Event.AsRune = runeMap[kb.Event.Key.Code].uc
-			case kb.Modifiers.Ctrl:
-				kb.Event.AsRune = runeMap[kb.Event.Key.Code].cc
+			// case kb.Modifiers.Ctrl:
+			// 	kb.Event.AsRune = runeMap[kb.Event.Key.Code].cc
 			default:
 				kb.Event.AsRune = runeMap[kb.Event.Key.Code].lc
 			}
