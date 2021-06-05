@@ -15,7 +15,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const deviceDirectory = "/dev/input/by-path/*event-kbd"
+// const deviceDirectory = "/sys/bus/usb/devices/*"
+const deviceDirectory = "/sys/class/input/*"
 
 type KeyModifiers struct {
 	CapsLock bool
@@ -304,14 +305,44 @@ func NewLinuxKeyboard(device string) *LinuxKeyboard {
 func FindKeyboardDevice() string {
 	matches, err := filepath.Glob(deviceDirectory)
 	if err != nil {
-		log.Fatalf("Could not find any keyboard device: %v", err)
+		log.Fatalf("Could not find any devices? %v", err)
 	}
 	if len(matches) != 0 {
-		device, err := filepath.EvalSymlinks(matches[0])
-		if err != nil {
-			log.Fatalf("Could not evaluate symlink to keyboard device: %v", err)
+		var device string
+		for i := 0; i < len(matches); i++ {
+			if m, err := filepath.Glob(matches[i] + "/*/*::capslock"); err == nil {
+				if len(m) > 0 {
+					device = "/dev/input/" + filepath.Base(matches[i])
+					break
+				}
+			}
 		}
 		return device
+		// 	d, err := filepath.EvalSymlinks(matches[i])
+		// 	if err != nil {
+		// 		log.Fatalf("Could not evaluate symlink to keyboard device: %v", err)
+		// 	}
+		// 	intClass, err := ioutil.ReadFile(matches[i] + "/bInterfaceClass")
+		// 	if err != nil {
+		// 		log.Warnf("Could not read interface class: %v", err)
+		// 	} else {
+		// 		if strings.TrimSpace(string(intClass)) == "03" {
+		// 			intProto, err := ioutil.ReadFile(matches[i] + "/bInterfaceProtocol")
+		// 			log.Infof("protocol class of device %s is %s", d, intProto)
+		// 			if err != nil {
+		// 				log.Warnf("Could not read interface protocol: %v", err)
+		// 			}
+		// 			if strings.TrimSpace(string(intProto)) == "01" {
+		// 				log.Infof("Found keyboard device %s", d)
+		// 				device = d
+		// 				break
+		// 			}
+		// 		}
+		// 	}
+		// }
+		// return device + "/uevent"
+
 	}
+	log.Fatal("No devices appear to be connected?")
 	return ""
 }
