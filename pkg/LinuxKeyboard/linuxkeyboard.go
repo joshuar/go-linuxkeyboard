@@ -7,16 +7,15 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 	"unicode"
 
+	evdev "github.com/gvalkov/golang-evdev"
 	"github.com/joshuar/go-linuxkeyboard/pkg/InputEvent"
 	log "github.com/sirupsen/logrus"
 )
 
-// const deviceDirectory = "/sys/bus/usb/devices/*"
-const deviceDirectory = "/sys/class/input/*"
+const deviceDirectory = "/dev/input/event*"
 
 type KeyModifiers struct {
 	CapsLock bool
@@ -303,47 +302,26 @@ func NewLinuxKeyboard(device string) *LinuxKeyboard {
 
 // FindKeyboardDevice finds the keyboard device under deviceDirectory and returns the filename
 func FindKeyboardDevice() string {
-	matches, err := filepath.Glob(deviceDirectory)
+	matches, err := evdev.ListInputDevices(deviceDirectory)
 	if err != nil {
 		log.Fatalf("Could not find any devices? %v", err)
 	}
-	if len(matches) != 0 {
-		var device string
-		for i := 0; i < len(matches); i++ {
-			if m, err := filepath.Glob(matches[i] + "/*/*::capslock"); err == nil {
-				if len(m) > 0 {
-					device = "/dev/input/event9" // + filepath.Base(matches[i])
-					log.Infof("Found keyboard at %s", device)
-					break
+	// for i := 0; i < len(matches); i++ {
+	for _, match := range matches {
+		if err != nil {
+			log.Errorf("Unable to open input device: %s\n", match.Name)
+		}
+		// check if this device has the EV_KEY capability, then it's probably a keyboard
+		ev_key_cap := evdev.CapabilityType{Type: 0x01, Name: "EV_KEY"}
+		if caps, ok := match.Capabilities[ev_key_cap]; ok {
+			for _, v := range caps {
+				// check if this device has a space key, then it is most likely *the* keyboard
+				// could check for any key that would be on a keyboard but not other devices with keys
+				if v.Code == 57 {
+					return match.File.Name()
 				}
 			}
 		}
-		return device
-		// 	d, err := filepath.EvalSymlinks(matches[i])
-		// 	if err != nil {
-		// 		log.Fatalf("Could not evaluate symlink to keyboard device: %v", err)
-		// 	}
-		// 	intClass, err := ioutil.ReadFile(matches[i] + "/bInterfaceClass")
-		// 	if err != nil {
-		// 		log.Warnf("Could not read interface class: %v", err)
-		// 	} else {
-		// 		if strings.TrimSpace(string(intClass)) == "03" {
-		// 			intProto, err := ioutil.ReadFile(matches[i] + "/bInterfaceProtocol")
-		// 			log.Infof("protocol class of device %s is %s", d, intProto)
-		// 			if err != nil {
-		// 				log.Warnf("Could not read interface protocol: %v", err)
-		// 			}
-		// 			if strings.TrimSpace(string(intProto)) == "01" {
-		// 				log.Infof("Found keyboard device %s", d)
-		// 				device = d
-		// 				break
-		// 			}
-		// 		}
-		// 	}
-		// }
-		// return device + "/uevent"
-
 	}
-	log.Fatal("No devices appear to be connected?")
 	return ""
 }
