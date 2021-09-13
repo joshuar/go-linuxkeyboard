@@ -313,6 +313,7 @@ func FindKeyboardDevice() string {
 			if m, err := filepath.Glob(matches[i] + "/*/*::capslock"); err == nil {
 				if len(m) > 0 {
 					device = "/dev/input/" + filepath.Base(matches[i])
+					log.Infof("Found keyboard at %s", device)
 					break
 				}
 			}
