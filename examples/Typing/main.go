@@ -10,8 +10,8 @@ import (
 )
 
 func main() {
-
-	kbd := LinuxKeyboard.NewLinuxKeyboard(LinuxKeyboard.FindKeyboardDevice())
+	kbds := LinuxKeyboard.FindKeyboardDevice()
+	kbd := LinuxKeyboard.NewLinuxKeyboard(kbds[0])
 
 	time.Sleep(1 * time.Second)
 

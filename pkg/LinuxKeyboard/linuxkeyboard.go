@@ -301,7 +301,8 @@ func NewLinuxKeyboard(device string) *LinuxKeyboard {
 }
 
 // FindKeyboardDevice finds the keyboard device under deviceDirectory and returns the filename
-func FindKeyboardDevice() string {
+func FindKeyboardDevice() []string {
+	var devices []string
 	matches, err := evdev.ListInputDevices(deviceDirectory)
 	if err != nil {
 		log.Fatalf("Could not find any devices? %v", err)
@@ -318,10 +319,10 @@ func FindKeyboardDevice() string {
 				// check if this device has a space key, then it is most likely *the* keyboard
 				// could check for any key that would be on a keyboard but not other devices with keys
 				if v.Code == 57 {
-					return match.File.Name()
+					devices = append(devices, match.File.Name())
 				}
 			}
 		}
 	}
-	return ""
+	return devices
 }
