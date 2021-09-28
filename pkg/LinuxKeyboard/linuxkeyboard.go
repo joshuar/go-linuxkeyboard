@@ -286,6 +286,34 @@ func (kb *LinuxKeyboard) Snoop(ev chan KeyboardEvent) {
 	}
 }
 
+func SnoopAll(ev chan KeyboardEvent) {
+	kdbDevices := FindKeyboardDevice()
+
+	for _, kbdDev := range kdbDevices {
+		log.Debugf("Tracking keys on device %s", kbdDev)
+		kbd := NewLinuxKeyboard(kbdDev)
+		go func(kbd *LinuxKeyboard) {
+			for {
+				buffer := make([]byte, 24)
+				e, err := kbd.Read(buffer)
+				if err != nil {
+					log.Error(err)
+					break
+				}
+
+				if e > 0 {
+					select {
+					case <-ev:
+						return
+					default:
+						ev <- *kbd.Event
+					}
+				}
+			}
+		}(kbd)
+	}
+}
+
 // NewLinuxKeyboard opens a character special device from the kernel representing a keyboard and
 // sets up reader and writers for it.
 func NewLinuxKeyboard(device string) *LinuxKeyboard {
@@ -316,9 +344,9 @@ func FindKeyboardDevice() []string {
 		ev_key_cap := evdev.CapabilityType{Type: 0x01, Name: "EV_KEY"}
 		if caps, ok := match.Capabilities[ev_key_cap]; ok {
 			for _, v := range caps {
-				// check if this device has a space key, then it is most likely *the* keyboard
+				// check if this device has an 'a' key, then it is most likely *a* keyboard
 				// could check for any key that would be on a keyboard but not other devices with keys
-				if v.Code == 57 {
+				if v.Code == 30 {
 					devices = append(devices, match.File.Name())
 				}
 			}
