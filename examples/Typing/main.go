@@ -11,7 +11,8 @@ import (
 
 func main() {
 	kbds := LinuxKeyboard.FindKeyboardDevice()
-	kbd := LinuxKeyboard.NewLinuxKeyboard(kbds[0])
+	kbd := LinuxKeyboard.OpenLinuxKeyboard(kbds[0])
+	defer kbd.Close()
 
 	time.Sleep(1 * time.Second)
 
@@ -34,5 +35,7 @@ func main() {
 
 	log.Info("Typing 'There !'")
 	kbd.TypeString("There !")
-
+	for i := 0; i <= 7; i++ {
+		kbd.TypeBackSpace()
+	}
 }

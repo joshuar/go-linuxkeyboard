@@ -291,7 +291,7 @@ func SnoopAll(ev chan KeyboardEvent) {
 
 	for _, kbdDev := range kdbDevices {
 		log.Debugf("Tracking keys on device %s", kbdDev)
-		kbd := NewLinuxKeyboard(kbdDev)
+		kbd := OpenLinuxKeyboard(kbdDev)
 		go func(kbd *LinuxKeyboard) {
 			for {
 				buffer := make([]byte, 24)
@@ -314,9 +314,9 @@ func SnoopAll(ev chan KeyboardEvent) {
 	}
 }
 
-// NewLinuxKeyboard opens a character special device from the kernel representing a keyboard and
+// OpenLinuxKeyboard opens a character special device from the kernel representing a keyboard and
 // sets up reader and writers for it.
-func NewLinuxKeyboard(device string) *LinuxKeyboard {
+func OpenLinuxKeyboard(device string) *LinuxKeyboard {
 	file, err := os.OpenFile(device, os.O_RDWR|os.O_CREATE, 0660)
 	if err != nil {
 		log.Fatalf("Could not open keyboard device: %v", err)
